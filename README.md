@@ -56,3 +56,7 @@ npm run knip
 ```
 
 Logic lives in `src/project-tmp.js`; `index.js` only wires OpenCode hooks.
+
+CI runs the checks above on Node 22 and 24. CodeQL (`.github/workflows/codeql.yml`) analyses
+only while the repository is public: code scanning on private repositories needs GitHub
+Advanced Security.
