@@ -29,7 +29,9 @@ Add to the `plugins` array in `opencode.json`, pinned to a tag:
 
 ```json
 {
-  "plugins": ["opencode-temp-sanitize@git+https://github.com/GFN-CIS/opencode-temp-sanitize.git#v0.1.0"]
+  "plugins": [
+    "opencode-temp-sanitize@git+https://github.com/GFN-CIS/opencode-temp-sanitize.git#v0.1.0"
+  ]
 }
 ```
 
