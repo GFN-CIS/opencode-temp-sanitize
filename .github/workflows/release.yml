@@ -13,8 +13,8 @@ concurrency:
   group: release-${{ inputs.tag || github.ref_name }}
 jobs:
   # Publishes a GitHub Release with the npm pack tarball, its SHA-256 and a Sigstore
-  # build-provenance bundle. Installs use git+https on the tag; the assets let anyone
-  # verify that the tag content was built by this workflow.
+  # build-provenance bundle; the assets let anyone verify that the tag content was
+  # built by this workflow.
   release:
     runs-on: ubuntu-latest
     permissions:
@@ -57,3 +57,38 @@ jobs:
           cp "$BUNDLE" "${FILE}.sigstore.json"
           gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --verify-tag --generate-notes \
             "$FILE" "${FILE}.sigstore.json" SHA256SUMS
+  # Publishes the release tarball (same bytes as the attested asset) to npm through
+  # trusted publishing: npm authenticates this workflow via OIDC, no token exists.
+  # The trusted publisher on npmjs.com is bound to release.yml and environment "npm";
+  # the environment only admits v* tags. Manual dispatch re-releases on GitHub only.
+  npm:
+    needs: release
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment: npm
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      TAG: ${{ github.ref_name }}
+    steps:
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+      - name: npm supports trusted publishing
+        run: |
+          # OIDC trusted publishing needs npm >= 11.5.1.
+          node -e '
+            const [a, b, c] = process.argv[1].split(".").map(Number);
+            if (a * 1e6 + b * 1e3 + c < 11005001) {
+              console.error("::error::npm " + process.argv[1] + " < 11.5.1");
+              process.exit(1);
+            }' "$(npm --version)"
+      - name: Download release tarball
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --pattern "*.tgz" --pattern SHA256SUMS
+          sha256sum -c SHA256SUMS
+      - run: npm publish ./*.tgz --provenance --access public
