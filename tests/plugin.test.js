@@ -1,8 +1,8 @@
 /**
  * Suite: plugin entry wiring against a fake OpenCode plugin context.
  *
- * Covers index.js: directory creation, the session "context" hook and the shell
- * "create.before" hook. The fake records hook callbacks and invokes them the way
+ * Covers index.js: directory creation, the session "context" hook, the shell
+ * "create.before" hook and the cleanup started by setup. The fake records hook callbacks and invokes them the way
  * OpenCode does (mutable input object). Not covered: OpenCode's own hook dispatch.
  * Run: npm test. TMPDIR and HOME point at a fresh temporary directory per test.
  */
@@ -15,6 +15,7 @@ import { CLEANUP_HINT } from "../src/project-tmp.js";
 
 let root;
 let env;
+const cleanups = [];
 
 beforeEach(() => {
   root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "temp-sanitize-test-")));
@@ -25,7 +26,8 @@ beforeEach(() => {
   process.env.HOME = path.join(root, "home");
 });
 
-afterEach(() => {
+afterEach(async () => {
+  for (const cleanup of cleanups.splice(0)) await cleanup();
   for (const [key, value] of Object.entries(env)) {
     if (value === undefined) delete process.env[key];
     else process.env[key] = value;
@@ -40,11 +42,12 @@ async function load(project) {
     hooks[`${domain}.${name}`] = callback;
     return { dispose: async () => undefined };
   };
-  await plugin.setup({
+  const cleanup = await plugin.setup({
     location: { directory: project.directory, project },
     session: { hook: register("session") },
     shell: { hook: register("shell") },
   });
+  cleanups.push(cleanup);
   return hooks;
 }
 
@@ -96,6 +99,35 @@ describe("plugin", () => {
     hooks["session.context"](request("ses_2"));
 
     expect(warn).toHaveBeenCalledTimes(2);
+  });
+
+  it("deletes stale files of the project on setup", async () => {
+    const shared = path.join(root, "tmp", "opencode");
+    await load(project());
+    const own = path.join(shared, fs.readdirSync(shared)[0]);
+    const stale = path.join(own, "old.log");
+    const fresh = path.join(own, "new.log");
+    fs.writeFileSync(stale, "x");
+    fs.writeFileSync(fresh, "x");
+    const old = new Date(Date.now() - 49 * 60 * 60 * 1000);
+    fs.utimesSync(stale, old, old);
+
+    await load(project());
+
+    await vi.waitFor(() => expect(fs.existsSync(stale)).toBe(false));
+    expect(fs.existsSync(fresh)).toBe(true);
+  });
+
+  it("logs instead of throwing when cleanup fails", async () => {
+    // Cleanup runs from a timer inside the shared OpenCode service; it must not crash it.
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    vi.spyOn(fs.promises, "readdir").mockRejectedValue(
+      Object.assign(new Error("boom"), { code: "EIO" }),
+    );
+
+    await load(project());
+
+    await vi.waitFor(() => expect(warn).toHaveBeenCalledWith(expect.stringContaining("cleanup")));
   });
 
   it("fails setup when OpenCode's tmp directory does not exist", async () => {
