@@ -48,7 +48,8 @@ or straight from a git tag:
 Requires OpenCode 2.
 
 Each tag has a [GitHub Release](https://github.com/GFN-CIS/opencode-temp-sanitize/releases)
-with the `npm pack` tarball, `SHA256SUMS` and a Sigstore build-provenance bundle. Verify a
+with the `npm pack` tarball, `SHA256SUMS` and a Sigstore build-provenance bundle; CI then
+publishes that same tarball to npm via trusted publishing (OIDC, no tokens). Verify a
 downloaded tarball with:
 
 ```sh
