@@ -59,6 +59,7 @@ npm run knip
 
 Logic lives in `src/project-tmp.js`; `index.js` only wires OpenCode hooks.
 
-CI runs the checks above on Node 22 and 24. CodeQL (`.github/workflows/codeql.yml`) analyses
-only while the repository is public: code scanning on private repositories needs GitHub
-Advanced Security.
+CI runs the checks above on Node 22 and 24. Also in `.github/workflows/`: CodeQL
+(`security-and-quality` suite, only while the repository is public, since code scanning on
+private repositories needs GitHub Advanced Security), OpenSSF Scorecard, and dependency
+review on pull requests. Security reports: see [SECURITY.md](SECURITY.md).
