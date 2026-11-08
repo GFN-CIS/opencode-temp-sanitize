@@ -39,6 +39,14 @@ Add to the `plugins` array in `opencode.json`, pinned to a tag:
 
 Requires OpenCode 2.
 
+Each tag has a [GitHub Release](https://github.com/GFN-CIS/opencode-temp-sanitize/releases)
+with the `npm pack` tarball, `SHA256SUMS` and a Sigstore build-provenance bundle. Verify a
+downloaded tarball with:
+
+```sh
+gh attestation verify opencode-temp-sanitize-<version>.tgz --repo GFN-CIS/opencode-temp-sanitize
+```
+
 ## Upstream dependency
 
 The rewrite matches the exact sentence emitted by OpenCode core in
