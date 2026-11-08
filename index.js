@@ -6,6 +6,9 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { projectSlug, rewriteTmpHint } from "./src/project-tmp.js";
+import { sweepProjects } from "./src/sweep.js";
+
+const SWEEP_INTERVAL_MS = 60 * 60 * 1000;
 
 export default {
   id: "temp-sanitize",
@@ -33,5 +36,17 @@ export default {
     await ctx.shell.hook("create.before", (input) => {
       input.env.TMPDIR = projectTmp;
     });
+
+    // The OpenCode service runs for days and calls setup once, hence the timer.
+    // Cleanup is housekeeping: a failure is logged and retried on the next tick
+    // instead of crashing the shared service from a timer callback.
+    const sweep = () =>
+      sweepProjects(sharedTmp, Date.now()).catch((error) => {
+        console.warn(`[temp-sanitize] cleanup of ${sharedTmp} failed: ${error.message}`);
+      });
+    const timer = setInterval(sweep, SWEEP_INTERVAL_MS);
+    timer.unref();
+    sweep();
+    return () => clearInterval(timer);
   },
 };
