@@ -27,12 +27,20 @@ The plugin does not delete anything yet.
 
 ## Install
 
-Add to the `plugins` array in `opencode.json`, pinned to a tag:
+Add to the `plugins` array in `opencode.json`, pinned to a version:
+
+```json
+{
+  "plugins": ["@gfn-cis/opencode-temp-sanitize@0.2.1"]
+}
+```
+
+or straight from a git tag:
 
 ```json
 {
   "plugins": [
-    "opencode-temp-sanitize@git+https://github.com/GFN-CIS/opencode-temp-sanitize.git#v0.2.0"
+    "@gfn-cis/opencode-temp-sanitize@git+https://github.com/GFN-CIS/opencode-temp-sanitize.git#v0.2.1"
   ]
 }
 ```
@@ -44,7 +52,7 @@ with the `npm pack` tarball, `SHA256SUMS` and a Sigstore build-provenance bundle
 downloaded tarball with:
 
 ```sh
-gh attestation verify opencode-temp-sanitize-<version>.tgz --repo GFN-CIS/opencode-temp-sanitize
+gh attestation verify gfn-cis-opencode-temp-sanitize-<version>.tgz --repo GFN-CIS/opencode-temp-sanitize
 ```
 
 ## Upstream dependency

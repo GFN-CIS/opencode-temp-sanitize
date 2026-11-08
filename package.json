@@ -1,6 +1,6 @@
 {
-  "name": "opencode-temp-sanitize",
-  "version": "0.2.0",
+  "name": "@gfn-cis/opencode-temp-sanitize",
+  "version": "0.2.1",
   "description": "OpenCode 2 plugin that gives each project its own temporary directory",
   "type": "module",
   "main": "index.js",
@@ -27,6 +27,9 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/GFN-CIS/opencode-temp-sanitize.git"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "engines": {
     "node": ">=22.12.0",
