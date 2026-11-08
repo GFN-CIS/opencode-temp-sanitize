@@ -7,7 +7,7 @@
  */
 import { crc32 } from "node:zlib";
 import { describe, expect, it } from "vitest";
-import { projectSlug, rewriteTmpHint } from "../src/project-tmp.js";
+import { CLEANUP_HINT, projectSlug, rewriteTmpHint } from "../src/project-tmp.js";
 
 const HOME = "/home/user";
 const hash = (id) => crc32(id).toString(16).padStart(8, "0");
@@ -75,12 +75,15 @@ describe("rewriteTmpHint", () => {
   const shared = "/tmp/opencode";
   const own = "/tmp/opencode/projects-example-app-0000beef";
 
-  it("points the upstream hint at the project directory", () => {
+  it("points the upstream hint at the project directory and asks for cleanup", () => {
     const system = [{ type: "text", text: "You are an agent." }, environmentPart(shared)];
 
     expect(rewriteTmpHint(system, shared, own)).toBe(true);
-    expect(system[1].text).toContain(upstreamHint(own));
-    expect(system[1].text).not.toContain(`Prefer ${shared} over`);
+    const lines = system[1].text.split("\n");
+    // Cleanup request sits on the hint line itself so it reads as part of the same rule.
+    expect(lines[2]).toBe(`${upstreamHint(own)} ${CLEANUP_HINT}`);
+    expect(lines.slice(0, 2)).toEqual(environmentPart(shared).text.split("\n").slice(0, 2));
+    expect(lines[3]).toBe("</env>");
     expect(system[0].text).toBe("You are an agent.");
   });
 
@@ -93,12 +96,14 @@ describe("rewriteTmpHint", () => {
     expect(system[0].text).toBe(text);
   });
 
-  it("does not nest the path when applied twice", () => {
+  it("does not nest the path or repeat the cleanup request when applied twice", () => {
     const system = [environmentPart(shared)];
     rewriteTmpHint(system, shared, own);
+    const once = system[0].text;
 
     expect(rewriteTmpHint(system, shared, own)).toBe(false);
-    expect(system[0].text).toContain(upstreamHint(own));
+    expect(system[0].text).toBe(once);
+    expect(once.split(CLEANUP_HINT)).toHaveLength(2);
   });
 
   it("ignores non-text parts", () => {

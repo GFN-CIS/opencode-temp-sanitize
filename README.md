@@ -17,7 +17,9 @@ eventually breaks unrelated programs.
   project id: `~/work/example-app` becomes `work-example-app-1a2b3c4d`. Sessions outside
   any project use `global`.
 - Rewrites the core temporary-directory hint in the system prompt to point at that
-  directory. It stays inside the pre-approved tree, so no new permission prompts.
+  directory, and asks models to delete files there that they or their subagents created
+  once those files are certainly no longer needed. The directory stays inside the
+  pre-approved tree, so no new permission prompts.
 - Sets `TMPDIR` to the same directory for shell commands the agent runs.
 
 Models treat the hint as advice; nothing prevents them from writing elsewhere.
@@ -30,7 +32,7 @@ Add to the `plugins` array in `opencode.json`, pinned to a tag:
 ```json
 {
   "plugins": [
-    "opencode-temp-sanitize@git+https://github.com/GFN-CIS/opencode-temp-sanitize.git#v0.1.0"
+    "opencode-temp-sanitize@git+https://github.com/GFN-CIS/opencode-temp-sanitize.git#v0.2.0"
   ]
 }
 ```

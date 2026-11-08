@@ -11,6 +11,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import plugin from "../index.js";
+import { CLEANUP_HINT } from "../src/project-tmp.js";
 
 let root;
 let env;
@@ -64,7 +65,7 @@ describe("plugin", () => {
 
     expect(dir).toMatch(/^projects-app-[0-9a-f]{8}$/);
     expect(fs.statSync(own).isDirectory()).toBe(true);
-    expect(input.system[0].text).toBe(hint(own));
+    expect(input.system[0].text).toBe(`${hint(own)} ${CLEANUP_HINT}`);
   });
 
   it("points TMPDIR of spawned shells at the project directory", async () => {

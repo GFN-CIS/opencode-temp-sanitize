@@ -44,12 +44,16 @@ export function projectSlug(project, home) {
   return `${name}-${hash}`;
 }
 
+/** Appended to the rewritten hint line; nothing else ever removes these files. */
+export const CLEANUP_HINT =
+  "Don't forget to delete temporary files there that you or your subagents created once you are ABSOLUTELY SURE they will not be needed anymore.";
+
 /**
- * Replaces OpenCode's shared temporary directory with `projectTmp` in the core tmp hint,
- * mutating `system` in place.
+ * Replaces OpenCode's shared temporary directory with `projectTmp` in the core tmp hint
+ * and appends {@link CLEANUP_HINT} to that line, mutating `system` in place.
  *
  * Only the exact upstream wording ("Prefer <sharedTmp> over") is matched, so a rewritten
- * part never matches again and repeated calls are no-ops.
+ * line never matches again and repeated calls are no-ops.
  *
  * @param {Array<{ type: string, text: string }>} system `SessionContext.system` parts
  * @param {string} sharedTmp OpenCode's tmp directory, as core renders it
@@ -62,7 +66,12 @@ export function rewriteTmpHint(system, sharedTmp, projectTmp) {
   let found = false;
   for (const part of system) {
     if (part.type !== "text" || !part.text.includes(needle)) continue;
-    part.text = part.text.replaceAll(needle, replacement);
+    part.text = part.text
+      .split("\n")
+      .map((line) =>
+        line.includes(needle) ? `${line.replaceAll(needle, replacement)} ${CLEANUP_HINT}` : line,
+      )
+      .join("\n");
     found = true;
   }
   return found;
